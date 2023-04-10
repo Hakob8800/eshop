@@ -4,10 +4,7 @@ import db.DBConnectionProvider;
 import model.Category;
 import model.Product;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,10 +14,18 @@ public class ProductManager {
     private int res;
 
     public void add(Product product) {
-        try (Statement statement = connection.createStatement()) {
-            String query = "insert into product (name,description,price,quantity,category_id) values ('%s','%s','%d',%d,%d)";
-            statement.executeUpdate(String.format(query, product.getName(), product.getDescription(), product.getPrice(),
-                    product.getQuantity(), product.getCategory().getId()));
+        String query = "insert into product (name,description,price,quantity,category_id) values (?,?,?,?,?)";
+        try (PreparedStatement ps = connection.prepareStatement(query,Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, product.getName());
+            ps.setString(2, product.getDescription());
+            ps.setInt(3, product.getPrice());
+            ps.setInt(4, product.getQuantity());
+            ps.setInt(5, product.getCategory().getId());
+            ps.executeUpdate();
+            ResultSet generatedKeys = ps.getGeneratedKeys();
+            if(generatedKeys.next()){
+                product.setId(generatedKeys.getInt(1));
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -69,11 +74,16 @@ public class ProductManager {
     }
 
     public void upDate(int id, String[] productNewData) {
-        try (Statement statement = connection.createStatement()) {
-            String query = "update product set name = '%s', description = '%s', price = %d, quantity = %d, category_id = %d " +
-                    "where id = %d";
-            statement.executeUpdate(String.format(query, productNewData[0], productNewData[1], Integer.parseInt(productNewData[2]),
-                    Integer.parseInt(productNewData[3]), Integer.parseInt(productNewData[4]), id));
+        String query = "update product set name = ?, description = ?, price = ?, quantity = ?, category_id = ? " +
+                "where id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, productNewData[0]);
+            ps.setString(2, productNewData[1]);
+            ps.setInt(3, Integer.parseInt(productNewData[2]));
+            ps.setInt(4, Integer.parseInt(productNewData[3]));
+            ps.setInt(5, Integer.parseInt(productNewData[4]));
+            ps.setInt(6, id);
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }

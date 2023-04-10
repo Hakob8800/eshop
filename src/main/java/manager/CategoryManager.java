@@ -3,10 +3,7 @@ package manager;
 import db.DBConnectionProvider;
 import model.Category;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,9 +11,13 @@ public class CategoryManager {
     private Connection connection = DBConnectionProvider.getInstance().getConnection();
 
     public void add(Category category) {
-        String query = "insert into category(name) values('%s')";
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate(String.format(query, category.getName()));
+        try (PreparedStatement ps = connection.prepareStatement("insert into category(name) values(?)",Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, category.getName());
+            ps.executeUpdate();
+            ResultSet generatedKeys = ps.getGeneratedKeys();
+            if(generatedKeys.next()){
+                category.setId(generatedKeys.getInt(1));
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -27,7 +28,7 @@ public class CategoryManager {
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("SELECT * from category");
             while (resultSet.next()) {
-                Category category = new Category(resultSet.getInt("id"), resultSet.getNString("name"));
+                Category category = new Category(resultSet.getInt("id"), resultSet.getString("name"));
                 categories.add(category);
             }
         } catch (SQLException e) {
@@ -37,9 +38,10 @@ public class CategoryManager {
     }
 
     public void upDate(int id, String newName) {
-        String query = "update category set name = '%s' where id = %d";
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate(String.format(query, newName, id));
+        try (PreparedStatement ps = connection.prepareStatement("update category set name = ? where id = ?")) {
+            ps.setString(1, newName);
+            ps.setInt(2, id);
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
