@@ -11,11 +11,11 @@ public class CategoryManager {
     private Connection connection = DBConnectionProvider.getInstance().getConnection();
 
     public void add(Category category) {
-        try (PreparedStatement ps = connection.prepareStatement("insert into category(name) values(?)",Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = connection.prepareStatement("insert into category(name) values(?)", Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, category.getName());
             ps.executeUpdate();
             ResultSet generatedKeys = ps.getGeneratedKeys();
-            if(generatedKeys.next()){
+            if (generatedKeys.next()) {
                 category.setId(generatedKeys.getInt(1));
             }
         } catch (SQLException e) {
@@ -58,9 +58,9 @@ public class CategoryManager {
 
     public Category getById(int id) {
         Category category = null;
-        try (Statement statement = connection.createStatement()) {
-            String query = "SELECT * from category where id = %d";
-            ResultSet resultSet = statement.executeQuery(String.format(query, id));
+        String query = "SELECT * from category where id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query, id)) {
+            ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 category = new Category(resultSet.getInt("id"), resultSet.getNString("name"));
             }

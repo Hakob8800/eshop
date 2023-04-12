@@ -1,13 +1,10 @@
-package manager;
+ package manager;
 
 import db.DBConnectionProvider;
-import model.Category;
 import model.Product;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-
 public class ProductManager {
     Connection connection = DBConnectionProvider.getInstance().getConnection();
     CategoryManager categoryManager = new CategoryManager();
@@ -49,9 +46,9 @@ public class ProductManager {
     }
 
     public void deleteById(int id) {
-        try (Statement statement = connection.createStatement()) {
-            String query = "delete from product where id = %d";
-            statement.executeUpdate(String.format(query, id));
+        String query = "delete from product where id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(query,id)) {
+            ps.execute();
         } catch (SQLException e) {
             e.printStackTrace();
         }
